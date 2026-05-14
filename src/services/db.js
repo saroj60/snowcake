@@ -1,104 +1,155 @@
-// Mock Database Service using localStorage
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-const DB_KEYS = {
-  AUTH: 'snowcakes_auth',
-  PRODUCTS: 'snowcakes_inventory',
-  ORDERS: 'snowcakes_orders',
-  SETTINGS: 'snowcakes_settings'
-};
-
-// Initialize DB if empty
-if (!localStorage.getItem(DB_KEYS.SETTINGS)) {
-  localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify({
-    isOpen: true,
-    deliveryCharge: 0
-  }));
-}
-if (!localStorage.getItem(DB_KEYS.ORDERS)) {
-  localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify([]));
-}
+import { supabase } from '../lib/supabase';
 
 // --- Auth ---
 export const login = async (email, password) => {
-  await delay(500);
-  if (email === 'admin@snowcakes.com' && password === 'admin123') {
-    const session = { token: 'mock-jwt-token', user: { email } };
-    localStorage.setItem(DB_KEYS.AUTH, JSON.stringify(session));
-    return { user: session.user, error: null };
-  }
-  return { user: null, error: 'Invalid email or password' };
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  return { user: data?.user, error: error?.message };
 };
 
 export const logout = async () => {
-  await delay(200);
-  localStorage.removeItem(DB_KEYS.AUTH);
+  await supabase.auth.signOut();
 };
 
-export const getSession = () => {
-  const session = localStorage.getItem(DB_KEYS.AUTH);
-  return session ? JSON.parse(session) : null;
+export const getSession = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session;
 };
 
 // --- Products ---
 export const getProducts = async () => {
-  await delay(300);
-  const data = localStorage.getItem(DB_KEYS.PRODUCTS);
-  return data ? JSON.parse(data) : [];
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data.map(p => ({
+    ...p,
+    image: p.image_url,
+    isActive: p.is_active
+  }));
 };
 
 export const saveProduct = async (product) => {
-  await delay(400);
-  let products = await getProducts();
+  const productData = {
+    name: product.name,
+    description: product.description,
+    price: product.price,
+    image_url: product.image,
+    category: product.category,
+    is_active: product.isActive,
+  };
+
   if (product.id) {
-    products = products.map(p => p.id === product.id ? product : p);
+    const { data, error } = await supabase
+      .from('products')
+      .update(productData)
+      .eq('id', product.id)
+      .select();
+    if (error) throw error;
+    return data[0];
   } else {
-    product.id = Date.now().toString();
-    product.createdAt = new Date().toISOString();
-    products.push(product);
+    const { data, error } = await supabase
+      .from('products')
+      .insert([productData])
+      .select();
+    if (error) throw error;
+    return data[0];
   }
-  localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
-  return product;
 };
 
 export const deleteProduct = async (id) => {
-  await delay(300);
-  let products = await getProducts();
-  products = products.filter(p => p.id !== id);
-  localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+};
+
+// --- Storage ---
+export const uploadImage = async (file) => {
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Math.random()}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('product-images')
+    .upload(filePath, file);
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
 };
 
 // --- Orders ---
 export const getOrders = async () => {
-  await delay(300);
-  const data = localStorage.getItem(DB_KEYS.ORDERS);
-  return data ? JSON.parse(data) : [];
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) throw error;
+  return data.map(o => ({
+    ...o,
+    customer: {
+      name: o.customer_name,
+      phone: o.customer_phone,
+      address: o.customer_address,
+      lat: o.lat,
+      lng: o.lng,
+      notes: o.notes
+    }
+  }));
 };
 
 export const saveOrder = async (order) => {
-  await delay(300);
-  let orders = await getOrders();
-  if (order.id) {
-    orders = orders.map(o => o.id === order.id ? order : o);
-  } else {
-    order.id = 'ORD-' + Math.floor(1000 + Math.random() * 9000);
-    order.createdAt = new Date().toISOString();
-    order.status = 'Pending';
-    orders.unshift(order);
-  }
-  localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(orders));
-  return order;
+  const orderData = {
+    id: order.id || 'ORD-' + Math.floor(1000 + Math.random() * 9000),
+    customer_name: order.customer.name,
+    customer_phone: order.customer.phone,
+    customer_address: order.customer.address,
+    lat: order.customer.lat,
+    lng: order.customer.lng,
+    notes: order.customer.notes,
+    items: order.items,
+    total: order.total,
+    status: order.status || 'Pending'
+  };
+
+  const { data, error } = await supabase
+    .from('orders')
+    .upsert([orderData])
+    .select();
+  
+  if (error) throw error;
+  return data[0];
 };
 
 // --- Settings ---
 export const getSettings = async () => {
-  await delay(200);
-  return JSON.parse(localStorage.getItem(DB_KEYS.SETTINGS));
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*')
+    .limit(1)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || { isOpen: true, deliveryCharge: 0 };
 };
 
 export const updateSettings = async (settings) => {
-  await delay(300);
-  localStorage.setItem(DB_KEYS.SETTINGS, JSON.stringify(settings));
-  return settings;
+  const { data, error } = await supabase
+    .from('settings')
+    .upsert([{ id: 1, ...settings }])
+    .select();
+  
+  if (error) throw error;
+  return data[0];
 };

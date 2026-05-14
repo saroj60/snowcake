@@ -10,8 +10,11 @@ const AdminLayout = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const session = getSession();
-    setIsAuthenticated(!!session);
+    const checkAuth = async () => {
+      const session = await getSession();
+      setIsAuthenticated(!!session);
+    };
+    checkAuth();
   }, []);
 
   const handleLogout = async () => {

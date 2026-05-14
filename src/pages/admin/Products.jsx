@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search, X } from 'lucide-react';
-import { getProducts, saveProduct, deleteProduct } from '../../services/db';
+import { getProducts, saveProduct, deleteProduct, uploadImage } from '../../services/db';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [search, setSearch] = useState('');
   
   const [formData, setFormData] = useState({
@@ -59,14 +60,19 @@ const Products = () => {
     handleCloseModal();
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, image: reader.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        setIsUploading(true);
+        const url = await uploadImage(file);
+        setFormData({ ...formData, image: url });
+      } catch (error) {
+        console.error(error);
+        alert("Failed to upload image. Please check your Supabase Storage settings.");
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -230,8 +236,10 @@ const Products = () => {
                           type="file" 
                           accept="image/*"
                           onChange={handleImageUpload}
-                          className="w-full text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                          disabled={isUploading}
+                          className="w-full text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer disabled:opacity-50"
                         />
+                        {isUploading && <p className="text-xs text-primary animate-pulse">Uploading image...</p>}
                         <div className="text-xs text-on-surface-variant font-medium flex items-center gap-2">
                           <span className="flex-1 h-px bg-outline-variant/30"></span>
                           OR PASTE URL

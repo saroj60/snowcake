@@ -51,10 +51,10 @@ const Home = () => {
           <p className="font-body-md text-body-md text-on-surface-variant mt-2">Community favorites, baked to perfection.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-gutter">
           {cakes.map((cake) => (
-            <div key={cake.id} className="bg-surface-container-low rounded-xl p-6 shadow-[0_10px_30px_rgba(62,39,35,0.08)] group flex flex-col">
-              <div className="aspect-square overflow-hidden rounded-lg mb-6 bg-surface-variant">
+            <div key={cake.id} className="bg-surface-container-low rounded-xl p-3 md:p-6 shadow-[0_10px_30px_rgba(62,39,35,0.08)] group flex flex-col">
+              <div className="aspect-square overflow-hidden rounded-lg mb-4 md:mb-6 bg-surface-variant">
                 <img 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                   alt={cake.name} 
@@ -63,16 +63,16 @@ const Home = () => {
                 />
               </div>
               <div className="flex justify-between items-start mb-2">
-                <h4 className="font-headline-md text-headline-md text-primary">{cake.name}</h4>
-                <span className="font-label-lg text-label-lg text-on-surface-variant bg-surface px-3 py-1 rounded-full">Rs. {cake.price}</span>
+                <h4 className="font-headline-md text-sm md:text-headline-md text-primary line-clamp-1">{cake.name}</h4>
+                <span className="font-label-lg text-[10px] md:text-label-lg text-on-surface-variant bg-surface px-2 md:px-3 py-1 rounded-full whitespace-nowrap">Rs. {cake.price}</span>
               </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mb-6 flex-grow">{cake.description}</p>
+              <p className="font-body-sm text-[10px] md:text-body-sm text-on-surface-variant mb-4 md:mb-6 flex-grow line-clamp-2">{cake.description}</p>
               <button 
                 onClick={() => addToCart(cake)}
                 className="w-full py-4 rounded-full bg-primary text-white font-label-lg hover:bg-primary/90 transition-all shadow-md flex items-center justify-center gap-2"
               >
-                <ShoppingBag size={20} />
-                <span>Add to Cart</span>
+                <ShoppingBag size={16} className="md:w-5 md:h-5" />
+                <span className="text-xs md:text-label-lg">Add to Cart</span>
               </button>
             </div>
           ))}

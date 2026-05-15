@@ -72,7 +72,7 @@ const CartDrawer = () => {
       return;
     }
 
-    let orderList = cartItems.map(item => `• ${item.name} (x${item.quantity}) - Rs. ${(item.price * item.quantity).toFixed(2)}`).join('\n');
+    let orderList = cartItems.map(item => `• ${item.name} (x${item.quantity}) - Rs. ${(item.price * item.quantity).toFixed(2)}\n  Photo: ${item.image}`).join('\n\n');
     let total = getCartTotal().toFixed(2);
 
     let message = `*NEW ORDER - SNOW CAKES* 🍰\n\n`;

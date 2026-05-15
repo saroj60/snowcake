@@ -118,7 +118,7 @@ const CartDrawer = () => {
       setIsCartOpen(false);
     }).catch(error => {
       console.error("Failed to save order:", error);
-      alert("Failed to process order. Please try again.");
+      alert("Order Error: " + (error.message || "Please try again."));
     });
   };
 

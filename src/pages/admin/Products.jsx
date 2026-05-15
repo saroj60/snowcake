@@ -69,7 +69,7 @@ const Products = () => {
         setFormData({ ...formData, image: url });
       } catch (error) {
         console.error(error);
-        alert("Failed to upload image. Please check your Supabase Storage settings.");
+        alert("Upload Error: " + (error.message || "Please check your Supabase Storage settings and Vercel Environment Variables."));
       } finally {
         setIsUploading(false);
       }

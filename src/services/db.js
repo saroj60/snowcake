@@ -98,6 +98,7 @@ export const getOrders = async () => {
   if (error) throw error;
   return data.map(o => ({
     ...o,
+    createdAt: o.created_at,
     customer: {
       name: o.customer_name,
       phone: o.customer_phone,

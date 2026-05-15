@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingBag, ListOrdered, DollarSign, Clock } from 'lucide-react';
-import { getProducts, getOrders } from '../../services/db';
+import { getProducts, getOrders, saveOrder } from '../../services/db';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -30,6 +30,12 @@ const Dashboard = () => {
     };
     fetchData();
   }, []);
+
+  const handleStatusChange = async (order, newStatus) => {
+    const updatedOrder = { ...order, status: newStatus };
+    await saveOrder(updatedOrder);
+    setRecentOrders(recentOrders.map(o => o.id === order.id ? updatedOrder : o));
+  };
 
   return (
     <div>
@@ -69,13 +75,21 @@ const Dashboard = () => {
                     <td className="px-4 py-3 text-sm">{order.customer.name}</td>
                     <td className="px-4 py-3 text-sm text-on-surface-variant">{new Date(order.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        order.status === 'Pending' ? 'bg-orange-100 text-orange-700' :
-                        order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {order.status}
-                      </span>
+                      <select 
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order, e.target.value)}
+                        className={`text-xs font-bold px-2 py-1 rounded-full border appearance-none cursor-pointer outline-none ${
+                          order.status === 'Pending' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                          order.status === 'Delivered' ? 'bg-green-100 text-green-700 border-green-200' :
+                          'bg-blue-100 text-blue-700 border-blue-200'
+                        }`}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Baking">Baking</option>
+                        <option value="Out for delivery">Out for delivery</option>
+                        <option value="Delivered">Delivered</option>
+                      </select>
                     </td>
                     <td className="px-4 py-3 text-sm font-semibold">Rs. {order.total.toFixed(2)}</td>
                   </tr>
